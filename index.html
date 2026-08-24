@@ -20,11 +20,7 @@
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-        h2 {
-            text-align: center;
-            color: #111;
-            margin-top: 0;
-        }
+        h2 { text-align: center; color: #111; margin-top: 0; }
         .btn {
             display: block;
             width: 100%;
@@ -40,7 +36,6 @@
         .btn-blue { background-color: #007bff; color: white; margin-bottom: 15px; }
         .btn-red { background-color: #e53e3e; color: white; margin-bottom: 15px; }
         .btn-green { background-color: #28a745; color: white; margin-top: 20px; }
-        .btn-orange { background-color: #fd7e14; color: white; margin-top: 10px; }
         .weight-display {
             background: #fff5f5;
             border: 2px solid #feb2b2;
@@ -51,6 +46,12 @@
             font-weight: bold;
             color: #e53e3e;
             margin: 15px 0;
+        }
+        .mode-section {
+            background: #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
         }
         .timer-section {
             background: #eef6ff;
@@ -83,12 +84,7 @@
             box-sizing: border-box;
         }
         .row { display: flex; gap: 10px; align-items: center; }
-        .status-bar {
-            text-align: center;
-            font-size: 14px;
-            color: #718096;
-            margin-bottom: 10px;
-        }
+        .status-bar { text-align: center; font-size: 14px; color: #718096; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -99,9 +95,20 @@
     <button class="btn btn-blue" id="connectBtn" onclick="onConnectClick()">Search & Connect Device</button> 
     <div class="weight-display" id="weightVal">Current Real-time Weight: 0.0 g</div>
 
-    <!-- 新增：每日 3 次定时投喂区域 -->
+    <!-- 模式选择开关 -->
+    <div class="mode-section">
+        <div class="param-group" style="margin-bottom:0;">
+            <label style="font-size:16px; color:#2d3748;">⚙️ 工作模式选择 (Operation Mode):</label>
+            <select id="feed_mode">
+                <option value="0">持续连续供料分装模式 (Continuous Feeding)</option>
+                <option value="1">定时自动投喂模式 (Scheduled Feeding)</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 每日 3 次定时投喂设置 -->
     <div class="timer-section">
-        <h3 style="margin-top:0; color:#0056b3;">📅 Daily Scheduled Feeding</h3>
+        <h3 style="margin-top:0; color:#0056b3;">📅 Daily Scheduled Feeding (定时时段)</h3>
         
         <div class="meal-box">
             <div class="param-group">
@@ -145,7 +152,7 @@
 
     <hr style="border:0; height:1px; background:#e2e8f0; margin:20px 0;">
 
-    <!-- 保留原有 10 项参数 -->
+    <!-- 保留原有 10 项核心参数 -->
     <div class="param-group">
         <label>1. Target Weight (g):</label>
         <input type="number" id="etWeight" step="0.1" value="100.0">
@@ -187,8 +194,7 @@
         <input type="number" id="etScaleFactor" step="0.01" value="433.20">
     </div>
 
-    <button class="btn btn-green" onclick="sendParameters()">Apply Settings</button>
-    <button class="btn btn-orange" onclick="triggerManualFeed()">Manual Feed Now (手动立即触发一次)</button>
+    <button class="btn btn-green" onclick="sendParameters()">Apply Settings (应用并保存配置)</button>
 </div>
 
 <script>
@@ -213,14 +219,14 @@
             document.getElementById('etReduceStable').value = arr[8];
             document.getElementById('etScaleFactor').value = arr[9]; 
             
-            // 回填定时参数
-            if(arr.length >= 16) {
-                document.getElementById('m1_enable').value = arr[10];
-                document.getElementById('m1_time').value = arr[11];
-                document.getElementById('m2_enable').value = arr[12];
-                document.getElementById('m2_time').value = arr[13];
-                document.getElementById('m3_enable').value = arr[14];
-                document.getElementById('m3_time').value = arr[15];
+            if(arr.length >= 17) {
+                document.getElementById('feed_mode').value = arr[10];
+                document.getElementById('m1_enable').value = arr[11];
+                document.getElementById('m1_time').value = arr[12];
+                document.getElementById('m2_enable').value = arr[13];
+                document.getElementById('m2_time').value = arr[14];
+                document.getElementById('m3_enable').value = arr[15];
+                document.getElementById('m3_time').value = arr[16];
             }
 
             document.getElementById('statusText').innerText = "Status: Parameters Synced";
@@ -252,10 +258,10 @@
                 document.getElementById('connectBtn').innerText = "Disconnect";
                 document.getElementById('connectBtn').className = "btn btn-red";
                 
-                // 1. 先对时
+                // 1. 先对时（让 ESP32 知道现在的真实系统时间）
                 await syncSystemTime();
 
-                // 2. 发送读取参数指令
+                // 2. 发送指令读取 ESP32 当前存有的参数
                 let encoder = new TextEncoder();
                 await bleCharacteristic.writeValue(encoder.encode("READ_PARAMS"));
                 
@@ -308,6 +314,8 @@
         let stableT = parseInt(document.getElementById('etReduceStable').value);
         let scaleFac = parseFloat(document.getElementById('etScaleFactor').value).toFixed(2);
 
+        let fMode = document.getElementById('feed_mode').value;
+
         let m1_e = document.getElementById('m1_enable').value;
         let m1_t = document.getElementById('m1_time').value;
         let m2_e = document.getElementById('m2_enable').value;
@@ -315,7 +323,7 @@
         let m3_e = document.getElementById('m3_enable').value;
         let m3_t = document.getElementById('m3_time').value;
 
-        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${m1_e},${m1_t},${m2_e},${m2_t},${m3_e},${m3_t}`;
+        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${fMode},${m1_e},${m1_t},${m2_e},${m2_t},${m3_e},${m3_t}`;
         let encoder = new TextEncoder();
         try {
             await bleCharacteristic.writeValue(encoder.encode(dataString));
@@ -324,19 +332,6 @@
             alert("Sending Failed");
         }
     } 
-
-    async function triggerManualFeed() {
-        if (!bleCharacteristic) {
-            alert("Please Connect to Bluetooth First");
-            return;
-        }
-        let encoder = new TextEncoder();
-        try {
-            await bleCharacteristic.writeValue(encoder.encode("MANUAL_TRIGGER"));
-        } catch (error) {
-            alert("Trigger Failed");
-        }
-    }
 </script>
 </body>
 </html>
