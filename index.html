@@ -83,12 +83,12 @@
             margin-bottom: 5px;
             color: #4a5568;
         }
-        /* 警告类标签样式（新增用于校准系数） */
+        /* 警告类标签样式 */
         .param-group label.warning {
-            color: #e53e3e;
+            color: #e53e3e; 
         }
-        /* 输入框样式 */
-        .param-group input {
+        /* 输入框与选择框样式 */
+        .param-group input[type="number"], .param-group input[type="time"], .param-group select {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -103,23 +103,30 @@
             color: #718096;
             margin-bottom: 10px;
         }
-        .schedule-wrap{
-            background:#f8fafc;
-            border:1px dashed #cbd5e0;
-            border-radius:8px;
-            padding:12px;
+        /* 定时排程配置容器 */
+        .schedule-box {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
         }
-        .schedule-item{
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-bottom:8px;
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
-        .schedule-item:last-child{
-            margin-bottom:0;
+        .schedule-item:last-child {
+            margin-bottom: 0;
         }
-        .schedule-item input[type="time"]{
-            width:45%;
+        .schedule-item label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+        .schedule-item input[type="time"] {
+            width: 50%;
+            padding: 6px;
         }
     </style>
 </head>
@@ -128,23 +135,23 @@
 <div class="container">
     <h2> Automatic Weighing Controller </h2>
     <div class="status-bar" id="statusText">Status: Disconnected</div>
-    <button class="btn btn-blue" id="connectBtn" onclick="onConnectClick()">Search & Connect Device</button>
+    <button class="btn btn-blue" id="connectBtn" onclick="onConnectClick()">Search & Connect Device</button> 
     <div class="weight-display" id="weightVal">Current Real-time Weight: 0.0 g</div>
     <hr style="border:0; height:1px; background:#e2e8f0; margin:20px 0;">
 
     <!-- 模式选择 -->
     <div class="param-group">
-        <label>Work Mode:</label>
+        <label>0. System Working Mode:</label>
         <select id="etWorkMode" onchange="onModeChange()">
-            <option value="0">Continuous Auto Weighing</option>
-            <option value="1">Pet Timed Feeding Mode</option>
+            <option value="0">Continuous Automatic Weighing Mode</option>
+            <option value="1">Pet Scheduled Feeding Mode</option>
         </select>
     </div>
 
-    <!-- 定时投喂配置，模式=1才显示 -->
-    <div class="param-group" id="timeSettingBox" style="display:none;">
-        <label>Timed Feeding Schedule:</label>
-        <div class="schedule-wrap">
+    <!-- 定时排程 -->
+    <div class="param-group" id="timerGroup" style="display: none;">
+        <label>Scheduled Feeding Settings:</label>
+        <div class="schedule-box">
             <div class="schedule-item">
                 <label><input type="checkbox" id="m1_en"> Breakfast</label>
                 <input type="time" id="m1_time" value="08:00">
@@ -205,27 +212,24 @@
 </div>
 
 <script>
-    // 蓝牙服务UUID
     const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
-    // 蓝牙特征值UUID
     const CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
-    let bleDevice = null;        // 蓝牙设备对象
-    let bleCharacteristic = null;// 蓝牙特征对象
-    let lastRecData = "";        // 上一次接收的数据
+    let bleDevice = null;
+    let bleCharacteristic = null;
+    let lastRecData = "";
 
+    // 延时辅助函数，防止 BLE 发送黏包
     const delay = ms => new Promise(res => setTimeout(res, ms));
 
-    function onModeChange(){
-        let m = document.getElementById('etWorkMode').value;
-        document.getElementById('timeSettingBox').style.display = (m==="1")?"block":"none";
+    function onModeChange() {
+        let mode = document.getElementById('etWorkMode').value;
+        document.getElementById('timerGroup').style.display = (mode === "1") ? "block" : "none";
     }
 
-    // 接收设备参数并填充到界面
     function fillDeviceParams(paramStr){
         let arr = paramStr.split(',');
-        //总字段：10旧 + mode + m1En + H:M + m2En + H:M + m3En + H:M 一共17项
-        if(arr.length === 17){
+        if(arr.length >= 17){
             document.getElementById('etWeight').value = arr[0];
             document.getElementById('etWeighWait').value = arr[1];
             document.getElementById('etServoAngle').value = arr[2];
@@ -235,23 +239,23 @@
             document.getElementById('etStableMs').value = arr[6];
             document.getElementById('etSlowDown').value = arr[7];
             document.getElementById('etReduceStable').value = arr[8];
-            document.getElementById('etScaleFactor').value = arr[9];
+            document.getElementById('etScaleFactor').value = arr[9]; 
 
-            //定时参数
             document.getElementById('etWorkMode').value = arr[10];
-            document.getElementById('m1_en').checked = (arr[11]==="1");
-            document.getElementById('m1_time').value = arr[12];
-            document.getElementById('m2_en').checked = (arr[13]==="1");
-            document.getElementById('m2_time').value = arr[14];
-            document.getElementById('m3_en').checked = (arr[15]==="1");
-            document.getElementById('m3_time').value = arr[16];
+            document.getElementById('m1_en').checked = (arr[11] === "1");
+            document.getElementById('m1_time').value = arr[12] || "08:00";
+
+            document.getElementById('m2_en').checked = (arr[13] === "1");
+            document.getElementById('m2_time').value = arr[14] || "12:00";
+
+            document.getElementById('m3_en').checked = (arr[15] === "1");
+            document.getElementById('m3_time').value = arr[16] || "18:00";
 
             onModeChange();
             document.getElementById('statusText').innerText = "Status: Parameters Synced";
         }
     }
 
-    // 连接蓝牙设备
     async function onConnectClick() {
         if (!bleDevice) {
             try {
@@ -266,22 +270,26 @@
                 bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
                 await bleCharacteristic.startNotifications();
                 bleCharacteristic.addEventListener('characteristicvaluechanged', handleRecData);
-                document.getElementById('statusText').innerText = "Connected, Sync Time & Read Params...";
+                
+                document.getElementById('statusText').innerText = "Connected, Syncing Time & Reading Parameters...";
                 document.getElementById('connectBtn').innerText = "Disconnect";
                 document.getElementById('connectBtn').className = "btn btn-red";
-
-                //下发时间戳同步RTC
+                
                 let encoder = new TextEncoder();
-                let ts = Math.floor(Date.now()/1000);
-                await bleCharacteristic.writeValue(encoder.encode("SYNC_TIME:"+ts));
-                await delay(120);
-                // 发送读取参数指令
-                await bleCharacteristic.writeValue(encoder.encode("READ_PARAMS"));
+                
+                // 1. 发送时间同步指令
+                let epoch = Math.floor(Date.now() / 1000);
+                await bleCharacteristic.writeValue(encoder.encode("SYNC_TIME:" + epoch));
+                
+                // 增加 150ms 延时，保证蓝牙传输层间隔，防止指令黏包
+                await delay(150);
 
-                // 监听设备断开事件
+                // 2. 发送读取参数指令
+                await bleCharacteristic.writeValue(encoder.encode("READ_PARAMS"));
+                
                 bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
             } catch (error) {
-                document.getElementById('statusText').innerText = "Connection Failed：" + error.message;
+                document.getElementById('statusText').innerText = "Connection Failed: " + error.message;
                 bleDevice = null;
                 bleCharacteristic = null;
             }
@@ -290,7 +298,6 @@
         }
     }
 
-    // 处理蓝牙接收数据
     function handleRecData(event){
         let decoder = new TextDecoder('utf-8');
         let str = decoder.decode(event.target.value).trim();
@@ -298,15 +305,13 @@
         lastRecData = str;
 
         let commaCnt = (str.match(/,/g) || []).length;
-        //17个字段对应16个逗号
-        if(commaCnt === 16){
+        if(commaCnt >= 16){
             fillDeviceParams(str);
-        }else{
+        } else {
             document.getElementById('weightVal').innerText = "Current Real-time Weight: " + str + " g";
         }
     }
 
-    // 蓝牙断开回调
     function onDisconnected() {
         document.getElementById('statusText').innerText = "Status: Disconnected";
         document.getElementById('connectBtn').innerText = "Search & Connect Device";
@@ -315,41 +320,43 @@
         bleCharacteristic = null;
     }
 
-    // 下发参数到设备
     async function sendParameters() {
         if (!bleCharacteristic) {
             alert("Please Connect to Bluetooth First");
             return;
         }
-        let w = parseFloat(document.getElementById('etWeight').value).toFixed(1);
-        let ww = parseInt(document.getElementById('etWeighWait').value);
-        let sa = parseInt(document.getElementById('etServoAngle').value);
-        let sh = parseInt(document.getElementById('etServoHold').value);
-        let ci = parseInt(document.getElementById('etCycleInterval').value);
-        let werr = parseFloat(document.getElementById('etWeightErr').value).toFixed(1);
-        let stms = parseInt(document.getElementById('etStableMs').value);
-        let slow = parseFloat(document.getElementById('etSlowDown').value).toFixed(1);
-        let stableT = parseInt(document.getElementById('etReduceStable').value);
-        let scaleFac = parseFloat(document.getElementById('etScaleFactor').value).toFixed(2);
+
+        // 防空校验，防止空输入框导出 NaN 导致设备解析崩溃
+        let w = parseFloat(document.getElementById('etWeight').value || 100).toFixed(1);
+        let ww = parseInt(document.getElementById('etWeighWait').value || 2);
+        let sa = parseInt(document.getElementById('etServoAngle').value || 180);
+        let sh = parseInt(document.getElementById('etServoHold').value || 3);
+        let ci = parseInt(document.getElementById('etCycleInterval').value || 1);
+        let werr = parseFloat(document.getElementById('etWeightErr').value || 2.0).toFixed(1);
+        let stms = parseInt(document.getElementById('etStableMs').value || 300);
+        let slow = parseFloat(document.getElementById('etSlowDown').value || 10.0).toFixed(1);
+        let stableT = parseInt(document.getElementById('etReduceStable').value || 2);
+        let scaleFac = parseFloat(document.getElementById('etScaleFactor').value || 433.20).toFixed(2);
 
         let wMode = document.getElementById('etWorkMode').value;
-        let m1En = document.getElementById('m1_en').checked?1:0;
-        let t1 = document.getElementById('m1_time').value;
-        let m2En = document.getElementById('m2_en').checked?1:0;
-        let t2 = document.getElementById('m2_time').value;
-        let m3En = document.getElementById('m3_en').checked?1:0;
-        let t3 = document.getElementById('m3_time').value;
+        let m1_en = document.getElementById('m1_en').checked ? 1 : 0;
+        let m1_t  = document.getElementById('m1_time').value || "08:00";
 
-        //完整参数串
-        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${wMode},${m1En},${t1},${m2En},${t2},${m3En},${t3}`;
+        let m2_en = document.getElementById('m2_en').checked ? 1 : 0;
+        let m2_t  = document.getElementById('m2_time').value || "12:00";
+
+        let m3_en = document.getElementById('m3_en').checked ? 1 : 0;
+        let m3_t  = document.getElementById('m3_time').value || "18:00";
+
+        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${wMode},${m1_en},${m1_t},${m2_en},${m2_t},${m3_en},${m3_t}`;
         let encoder = new TextEncoder();
         try {
             await bleCharacteristic.writeValue(encoder.encode(dataString));
             alert("Parameters Applied Successfully");
         } catch (error) {
-            alert("Sending Failed");
+            alert("Sending Failed: " + error.message);
         }
-    }
+    } 
 </script>
 </body>
 </html>
