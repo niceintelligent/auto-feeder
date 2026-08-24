@@ -1,248 +1,365 @@
-<!DOCTYPE html>                                                     <!-- 声明 HTML5 文档类型 -->
-<html lang="en">                                                    <!-- 语言设置为英文 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">                                            <!-- 设置字符编码为 UTF-8 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 适配移动端设备的视口与缩放比例 -->
-  <title>Fill_S3 Control Panel</title>                              <!-- 网页标题 -->
-  <style>                                                           <!-- 内联 CSS 样式表定义 -->
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f7f6; color: #333; } /* 设定全局字体、边距和背景灰度 */
-    h2 { color: #2c3e50; }                                          /* 设置主标题颜色 */
-    .card { background: #fff; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); } /* 设定卡片模块的白底、圆角与阴影 */
-    label { display: inline-block; width: 140px; margin-bottom: 8px; font-weight: bold; } /* 设定表单标签固定宽度与粗体 */
-    input[type="number"], input[type="time"], select { padding: 6px; width: 140px; border: 1px solid #ccc; border-radius: 4px; } /* 设定输入框与下拉框统一样式 */
-    button { padding: 8px 16px; background-color: #3498db; color: #fff; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; } /* 设定默认按钮主题蓝颜色 */
-    button:hover { background-color: #2980b9; }                       /* 设定按钮鼠标悬停深蓝效果 */
-    .btn-danger { background-color: #e74c3c; }                       /* 设定警告/停止按钮红色背景 */
-    .btn-danger:hover { background-color: #c0392b; }                /* 设定警告按钮悬停深红效果 */
-    .status { font-weight: bold; color: #27ae60; }                   /* 设定连接状态提示文字样式 */
-    .weight-display { font-size: 1.2em; font-weight: bold; color: #e67e22; } /* 设定实时重量大字粗体突出显示 */
-  </style>                                                          <!-- 结束 CSS 样式定义 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Automatic Weighing Controller </title>
+    <style>
+        /* 页面整体样式 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 15px;
+            color: #333;
+        }
+        /* 容器样式 */
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        /* 标题样式 */
+        h2 {
+            text-align: center;
+            color: #111;
+            margin-top: 0;
+        }
+        /* 按钮通用样式 */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        /* 蓝色连接按钮 */
+        .btn-blue {
+            background-color: #007bff;
+            color: white;
+            margin-bottom: 15px;
+        }
+        /* 红色断开按钮 */
+        .btn-red {
+            background-color: #e53e3e;
+            color: white;
+            margin-bottom: 15px;
+        }
+        /* 绿色发送按钮 */
+        .btn-green {
+            background-color: #28a745;
+            color: white;
+            margin-top: 20px;
+        }
+        /* 重量显示区域 */
+        .weight-display {
+            background: #fff5f5;
+            border: 2px solid #feb2b2;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #e53e3e;
+            margin: 15px 0;
+        }
+        /* 参数组样式 */
+        .param-group {
+            margin-bottom: 15px;
+        }
+        /* 参数标签样式 */
+        .param-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+        /* 警告类标签样式 */
+        .param-group label.warning {
+            color: #e53e3e; 
+        }
+        /* 输入框与选择框样式 */
+        .param-group input[type="number"], .param-group input[type="time"], .param-group select {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        /* 状态文本样式 */
+        .status-bar {
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 10px;
+        }
+        /* 新增：定时排程配置容器 */
+        .schedule-box {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 10px;
+        }
+        .schedule-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .schedule-item:last-child {
+            margin-bottom: 0;
+        }
+        .schedule-item label {
+            margin-bottom: 0;
+            font-weight: normal;
+        }
+        .schedule-item input[type="time"] {
+            width: 50%;
+            padding: 6px;
+        }
+    </style>
 </head>
 <body>
 
-  <h2>🐾 Fill_S3 Web Controller</h2>                               <!-- 页面大标题 -->
+<div class="container">
+    <h2> Automatic Weighing Controller </h2>
+    <div class="status-bar" id="statusText">Status: Disconnected</div>
+    <button class="btn btn-blue" id="connectBtn" onclick="onConnectClick()">Search & Connect Device</button> 
+    <div class="weight-display" id="weightVal">Current Real-time Weight: 0.0 g</div>
+    <hr style="border:0; height:1px; background:#e2e8f0; margin:20px 0;">
 
-  <!-- 1. 蓝牙连接区域卡片 -->
-  <div class="card">
-    <h3>Bluetooth Connection</h3>                                   <!-- 卡片小标题 -->
-    <button id="btnConnect" onclick="connectBLE()">Connect Device (Fill_S3)</button> <!-- 触发搜索连接蓝牙 Fill_S3 的按钮 -->
-    <button id="btnDisconnect" onclick="disconnectBLE()">Disconnect</button> <!-- 触发断开蓝牙连接的按钮 -->
-    <p>Status: <span id="bleStatus" class="status" style="color:red;">Disconnected</span></p> <!-- 显示当前连接状态的文本元素 -->
-  </div>
-
-  <!-- 2. 实时状态监视区卡片 -->
-  <div class="card">
-    <h3>Device Status</h3>                                           <!-- 状态卡片标题 -->
-    <p class="weight-display" id="weightVal">Current Real-time Weight: -- g</p> <!-- 显示实时传感器重量的文本元素 -->
-    <button onclick="syncTime()">Sync System Time</button>          <!-- 手动同步系统时间的按钮 -->
-  </div>
-
-  <!-- 3. 控制与参数设置区卡片 -->
-  <div class="card">
-    <h3>Feeder Settings</h3>                                         <!-- 参数卡片标题 -->
-    <div>
-      <label>Target Weight (g):</label>                              <!-- 标签：目标重量 -->
-      <input type="number" id="targetWeight" value="50">             <!-- 输入框：目标重量输入 -->
+    <!-- 新增功能：模式选择 -->
+    <div class="param-group">
+        <label>0. System Working Mode:</label>
+        <select id="etWorkMode" onchange="onModeChange()">
+            <option value="0">Continuous Automatic Weighing Mode</option>
+            <option value="1">Pet Scheduled Feeding Mode</option>
+        </select>
     </div>
-    <div>
-      <label>Calibration Factor:</label>                            <!-- 标签：称重校准系数 -->
-      <input type="number" id="kalibFactor" value="420">             <!-- 输入框：校准系数输入 -->
+
+    <!-- 新增功能：一日三餐定时（仅在选择定时模式时展示） -->
+    <div class="param-group" id="timerGroup" style="display: none;">
+        <label>Scheduled Feeding Settings:</label>
+        <div class="schedule-box">
+            <div class="schedule-item">
+                <label><input type="checkbox" id="m1_en"> Breakfast</label>
+                <input type="time" id="m1_time" value="08:00">
+            </div>
+            <div class="schedule-item">
+                <label><input type="checkbox" id="m2_en"> Lunch</label>
+                <input type="time" id="m2_time" value="12:00">
+            </div>
+            <div class="schedule-item">
+                <label><input type="checkbox" id="m3_en"> Dinner</label>
+                <input type="time" id="m3_time" value="18:00">
+            </div>
+        </div>
     </div>
-    <div>
-      <label>Timeout (s):</label>                                    <!-- 标签：超时时间 -->
-      <input type="number" id="feedTimeout" value="30">              <!-- 输入框：超时秒数输入 -->
+
+    <div class="param-group">
+        <label>1. Target Weight (g):</label>
+        <input type="number" id="etWeight" step="0.1" value="100.0">
     </div>
-    <div>
-      <label>Speed Mode:</label>                                    <!-- 标签：速度预设 -->
-      <select id="speedPreset">                                      <!-- 下拉框：选择出粮速度 -->
-        <option value="1">Slow</option>                              <!-- 选项1: 慢速 -->
-        <option value="2">Medium</option>                            <!-- 选项2: 中速 -->
-        <option value="3">Fast</option>                              <!-- 选项3: 快速 -->
-      </select>
+    <div class="param-group">
+        <label>2. Target Hold Time (0-10s):</label>
+        <input type="number" id="etWeighWait" min="0" max="10" value="2">
     </div>
-    <div>
-      <label>Work Mode:</label>                                     <!-- 标签：工作模式 -->
-      <select id="workMode" onchange="toggleModeDisplay()">         <!-- 下拉框：选择模式，改变时触发显示切换 -->
-        <option value="0">Manual Mode</option>                       <!-- 选项0: 手动模式 -->
-        <option value="1">Timer Schedule Mode</option>               <!-- 选项1: 定时模式 -->
-      </select>
+    <div class="param-group">
+        <label>3. Discharge Angle (0-180°):</label>
+        <input type="number" id="etServoAngle" min="0" max="180" value="180">
     </div>
-  </div>
-
-  <!-- 4. 定时喂食列表区域卡片（选择定时模式时才自动显示） -->
-  <div class="card" id="timerSection" style="display: none;">        <!-- 默认隐藏的定时设置区块 -->
-    <h3>Meal Schedule Settings</h3>                                 <!-- 定时卡片标题 -->
-    <div>
-      <input type="checkbox" id="m1_en"> <label style="width: auto;">Meal 1:</label> <!-- 复选框：餐次1开关 -->
-      <input type="time" id="m1_time" value="08:00">                 <!-- 时间输入框：餐次1时间 -->
+    <div class="param-group">
+        <label>4. Discharge Hold Time (0-20s):</label>
+        <input type="number" id="etServoHold" min="0" max="20" value="3">
     </div>
-    <br>
-    <div>
-      <input type="checkbox" id="m2_en"> <label style="width: auto;">Meal 2:</label> <!-- 复选框：餐次2开关 -->
-      <input type="time" id="m2_time" value="12:00">                 <!-- 时间输入框：餐次2时间 -->
+    <div class="param-group">
+        <label>5. Return Time (0-5s):</label>
+        <input type="number" id="etCycleInterval" min="0" max="5" value="1">
     </div>
-    <br>
-    <div>
-      <input type="checkbox" id="m3_en"> <label style="width: auto;">Meal 3:</label> <!-- 复选框：餐次3开关 -->
-      <input type="time" id="m3_time" value="18:00">                 <!-- 时间输入框：餐次3时间 -->
+    <div class="param-group">
+        <label>6. Weight Error Margin (g):</label>
+        <input type="number" id="etWeightErr" step="0.1" value="2.0">
     </div>
-  </div>
+    <div class="param-group">
+        <label>7. Weight Stability Threshold(ms):</label>
+        <input type="number" id="etStableMs" min="100" max="2000" value="300">
+    </div>
+    <div class="param-group">
+        <label>8. Final Dribble Slowdown Value (0-100g):</label>
+        <input type="number" id="etSlowDown" min="0" max="100" step="0.1" value="10.0">
+    </div>
+    <div class="param-group">
+        <label>9. Dribble Stabilizing Value (0-5s):</label>
+        <input type="number" id="etReduceStable" min="0" max="5" value="2">
+    </div>
+    <div class="param-group">
+        <label class="warning">10. Weighing Calibration Factor (Do Not Alter):</label>
+        <input type="number" id="etScaleFactor" step="0.01" value="433.20">
+    </div>
 
-  <!-- 5. 交互控制按键区域卡片 -->
-  <div class="card">
-    <button onclick="saveAndSendParams()">Save Settings</button>    <!-- 保存并下发所有参数配置按钮 -->
-    <button onclick="sendCmd('CMD:START_FEED')">Manual Feed Once</button> <!-- 手动出粮一次指令按钮 -->
-    <button class="btn-danger" onclick="sendCmd('CMD:STOP_FEED')">Stop Immediately</button> <!-- 紧急停止出粮指令按钮 -->
-  </div>
+    <button class="btn btn-green" onclick="sendParameters()">Apply Settings</button>
+</div>
 
-  <!-- 脚本处理逻辑 -->
-  <script>
-    const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";     // 通信服务的 BLE UUID
-    const CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb"; // 通信特性的 BLE UUID
+<script>
+    // 蓝牙服务UUID
+    const SERVICE_UUID = "0000ffe0-0000-1000-8000-00805f9b34fb";
+    // 蓝牙特征值UUID
+    const CHARACTERISTIC_UUID = "0000ffe1-0000-1000-8000-00805f9b34fb";
 
-    let bleDevice = null;                                            // 定义网页 BLE 设备句柄对象
-    let bleCharacteristic = null;                                    // 定义网页 BLE 特性句柄对象
-    let rxBuffer = "";                                               // 定义用于接收并拼接蓝牙数据分包的全局缓冲区
+    let bleDevice = null;             // 蓝牙设备对象
+    let bleCharacteristic = null;    // 蓝牙特征对象
+    let lastRecData = "";             // 上一次接收的数据
 
-    // 搜索与连接 Fill_S3 设备的异步函数
-    async function connectBLE() {
-      try {
-        console.log("Requesting Bluetooth Device Fill_S3...");      // 控制台打印日志
-        bleDevice = await navigator.bluetooth.requestDevice({        // 弹出浏览器原生 BLE 设备的选择框
-          filters: [{ name: 'Fill_S3' }],                           // 核心过滤条件：必须匹配名字叫 Fill_S3 的设备
-          optionalServices: [SERVICE_UUID]                           // 允许访问的蓝牙服务 UUID 列表
-        });
-
-        bleDevice.addEventListener('gattserverdisconnected', onDisconnected); // 注册蓝牙意外断开时的监听回调
-
-        const server = await bleDevice.gatt.connect();              // 连接 GATT 硬件服务端
-        const service = await server.getPrimaryService(SERVICE_UUID); // 获取对应 UUID 的主服务
-        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID); // 获取主服务下的数据交互特性
-
-        await bleCharacteristic.startNotifications();               // 开启该特性的 Notify 主动通知监听功能
-        bleCharacteristic.addEventListener('characteristicvaluechanged', handleRecData); // 注册收到设备端数据推送时的处理函数
-
-        document.getElementById('bleStatus').innerText = "Connected"; // 更新 UI 为已连接状态
-        document.getElementById('bleStatus').style.color = "green";  // 设置状态字体颜色为绿色
-
-        // 蓝牙连接成功后立即向 ESP32 下发当前网页系统时间戳进行对时
-        await syncTime();
-
-        // 向 ESP32 下发查询指令，拉取设备端之前在 Flash 中保存的配置参数
-        sendCmd("CMD:GET_PARAMS");
-
-      } catch (error) {                                             // 连接过程发生错误时的异常捕获
-        console.error("BLE Connect Failed:", error);                 // 打印错误堆栈到控制台
-        alert("Connection Failed: " + error);                       // 弹出警告框提示连接失败原因
-      }
+    // 切换模式时控制定时设置框的显隐
+    function onModeChange() {
+        let mode = document.getElementById('etWorkMode').value;
+        document.getElementById('timerGroup').style.display = (mode === "1") ? "block" : "none";
     }
 
-    // 主动断开蓝牙连接函数
-    function disconnectBLE() {
-      if (bleDevice && bleDevice.gatt.connected) {                   // 若设备存在且处于连接状态
-        bleDevice.gatt.disconnect();                                 // 执行断开连接操作
-      }
+    // 接收设备参数并填充到界面
+    function fillDeviceParams(paramStr){
+        let arr = paramStr.split(',');
+        if(arr.length >= 17){
+            document.getElementById('etWeight').value = arr[0];
+            document.getElementById('etWeighWait').value = arr[1];
+            document.getElementById('etServoAngle').value = arr[2];
+            document.getElementById('etServoHold').value = arr[3];
+            document.getElementById('etCycleInterval').value = arr[4];
+            document.getElementById('etWeightErr').value = arr[5];
+            document.getElementById('etStableMs').value = arr[6];
+            document.getElementById('etSlowDown').value = arr[7];
+            document.getElementById('etReduceStable').value = arr[8];
+            document.getElementById('etScaleFactor').value = arr[9]; 
+
+            // 填充新增的定时与模式参数
+            document.getElementById('etWorkMode').value = arr[10];
+            document.getElementById('m1_en').checked = (arr[11] === "1");
+            document.getElementById('m1_time').value = arr[12];
+
+            document.getElementById('m2_en').checked = (arr[13] === "1");
+            document.getElementById('m2_time').value = arr[14];
+
+            document.getElementById('m3_en').checked = (arr[15] === "1");
+            document.getElementById('m3_time').value = arr[16];
+
+            onModeChange(); // 刷新显隐状态
+            
+            document.getElementById('statusText').innerText = "Status: Parameters Synced";
+        }
     }
 
-    // 蓝牙断开连接后的 UI 响应回调
+    // 连接蓝牙设备
+    async function onConnectClick() {
+        if (!bleDevice) {
+            try {
+                document.getElementById('statusText').innerText = "Searching for Device...";
+                bleDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [SERVICE_UUID]
+                });
+                document.getElementById('statusText').innerText = "Connecting...";
+                let gattServer = await bleDevice.gatt.connect();
+                const service = await gattServer.getPrimaryService(SERVICE_UUID);
+                bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+                await bleCharacteristic.startNotifications();
+                bleCharacteristic.addEventListener('characteristicvaluechanged', handleRecData);
+                document.getElementById('statusText').innerText = "Connected, Syncing Time & Reading Parameters...";
+                document.getElementById('connectBtn').innerText = "Disconnect";
+                document.getElementById('connectBtn').className = "btn btn-red";
+                
+                // 1. 发送时间同步指令（校准ESP32的内部RTC软时钟）
+                let epoch = Math.floor(Date.now() / 1000);
+                let encoder = new TextEncoder();
+                await bleCharacteristic.writeValue(encoder.encode("SYNC_TIME:" + epoch));
+
+                // 2. 发送读取参数指令
+                await bleCharacteristic.writeValue(encoder.encode("READ_PARAMS"));
+                
+                // 监听设备断开事件
+                bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+            } catch (error) {
+                document.getElementById('statusText').innerText = "Connection Failed：" + error.message;
+                bleDevice = null;
+                bleCharacteristic = null;
+            }
+        } else {
+            bleDevice.gatt.disconnect();
+        }
+    }
+
+    // 处理蓝牙接收数据
+    function handleRecData(event){
+        let decoder = new TextDecoder('utf-8');
+        let str = decoder.decode(event.target.value).trim();
+        if(str === lastRecData) return;
+        lastRecData = str;
+
+        let commaCnt = (str.match(/,/g) || []).length;
+        if(commaCnt >= 16){
+            fillDeviceParams(str);
+        }else{
+            document.getElementById('weightVal').innerText = "Current Real-time Weight: " + str + " g";
+        }
+    }
+
+    // 蓝牙断开回调
     function onDisconnected() {
-      document.getElementById('bleStatus').innerText = "Disconnected"; // 更新 UI 状态为已断开
-      document.getElementById('bleStatus').style.color = "red";    // 将状态字体颜色修改为红色
+        document.getElementById('statusText').innerText = "Status: Disconnected";
+        document.getElementById('connectBtn').innerText = "Search & Connect Device";
+        document.getElementById('connectBtn').className = "btn btn-blue";
+        bleDevice = null;
+        bleCharacteristic = null;
     }
 
-    // 解决蓝牙分包截断解析的接收处理函数
-    function handleRecData(event) {
-      let decoder = new TextDecoder('utf-8');                        // 创建 UTF-8 解码器实例
-      let str = decoder.decode(event.target.value);                  // 将接收到的二进制 DataView 转为普通文本字符串
+    // 下发参数到设备
+    async function sendParameters() {
+        if (!bleCharacteristic) {
+            alert("Please Connect to Bluetooth First");
+            return;
+        }
+        let w = parseFloat(document.getElementById('etWeight').value).toFixed(1);
+        let ww = parseInt(document.getElementById('etWeighWait').value);
+        let sa = parseInt(document.getElementById('etServoAngle').value);
+        let sh = parseInt(document.getElementById('etServoHold').value);
+        let ci = parseInt(document.getElementById('etCycleInterval').value);
+        let werr = parseFloat(document.getElementById('etWeightErr').value).toFixed(1);
+        let stms = parseInt(document.getElementById('etStableMs').value);
+        let slow = parseFloat(document.getElementById('etSlowDown').value).toFixed(1);
+        let stableT = parseInt(document.getElementById('etReduceStable').value);
+        let scaleFac = parseFloat(document.getElementById('etScaleFactor').value).toFixed(2);
 
-      // 处理单条实时重量更新数据（特征是不包含逗号字符）
-      if (!str.includes(',')) {
-        document.getElementById('weightVal').innerText = "Current Real-time Weight: " + str.trim() + " g"; // 更新 UI 实时重量
-        return;                                                      // 结束当前处理
-      }
+        // 获取新增的模式与定时参数
+        let wMode = document.getElementById('etWorkMode').value;
+        let m1_en = document.getElementById('m1_en').checked ? 1 : 0;
+        let m1_t  = document.getElementById('m1_time').value;
 
-      // 处理包含逗号的复杂参数数据包，累加追加到拼接缓冲区中
-      rxBuffer += str;
-      let commaCnt = (rxBuffer.match(/,/g) || []).length;            // 计算当前缓冲区内已积累的逗号个数
+        let m2_en = document.getElementById('m2_en').checked ? 1 : 0;
+        let m2_t  = document.getElementById('m2_time').value;
 
-      // 当发现累计收集到了 10 个逗号，说明一条完整包含 11 个参数的完整数据包接收齐完毕
-      if (commaCnt >= 10) {
-        fillDeviceParams(rxBuffer.trim());                           // 调用填充解析函数，更新网页各输入框
-        rxBuffer = "";                                               // 解析完成后清空缓冲区，等待下次数据
-      }
-    }
+        let m3_en = document.getElementById('m3_en').checked ? 1 : 0;
+        let m3_t  = document.getElementById('m3_time').value;
 
-    // 解析参数字符串并填充网页输入框的函数
-    function fillDeviceParams(paramStr) {
-      let arr = paramStr.split(',');                                 // 按照逗号将数据切割为数组
-      if (arr.length >= 11) {                                        // 确保切割出来的参数项目不少于 11 项
-        document.getElementById('targetWeight').value = arr[0];       // 填充目标重量输入框
-        document.getElementById('kalibFactor').value = arr[1];        // 填充校准系数输入框
-        document.getElementById('feedTimeout').value = arr[2];        // 填充超时秒数输入框
-        document.getElementById('speedPreset').value = arr[3];        // 填充速度预设下拉框
-        document.getElementById('workMode').value = arr[4];           // 填充工作模式下拉框
-
-        document.getElementById('m1_en').checked = (arr[5] === "1"); // 勾选或取消餐次1复选框
-        document.getElementById('m1_time').value = arr[6];           // 填充餐次1时间
-
-        document.getElementById('m2_en').checked = (arr[7] === "1"); // 勾选或取消餐次2复选框
-        document.getElementById('m2_time').value = arr[8];           // 填充餐次2时间
-
-        document.getElementById('m3_en').checked = (arr[9] === "1"); // 勾选或取消餐次3复选框
-        document.getElementById('m3_time').value = arr[10];          // 填充餐次3时间
-
-        toggleModeDisplay();                                         // 刷新定时控制面板的显示/隐藏状态
-      }
-    }
-
-    // 通过 BLE 向 ESP32 下发文本指令的通用函数
-    async function sendCmd(cmdStr) {
-      if (!bleCharacteristic) {                                     // 判断蓝牙是否未初始化或未成功连接
-        alert("Please connect to Bluetooth first!");                 // 弹出提示框请用户先连接设备
-        return;                                                      // 退出函数
-      }
-      try {
-        let encoder = new TextEncoder('utf-8');                      // 创建 UTF-8 编码器实例
-        await bleCharacteristic.writeValue(encoder.encode(cmdStr));  // 将字符串编码成 Uint8Array 并写入蓝牙特性
-      } catch (err) {
-        console.error("Send Error:", err);                          // 打印写入发送错误日志
-      }
-    }
-
-    // 切换控制模式时显示/隐藏定时器面板的函数
-    function toggleModeDisplay() {
-      let mode = document.getElementById('workMode').value;          // 读取当前工作模式下拉框的值
-      document.getElementById('timerSection').style.display = (mode === "1") ? "block" : "none"; // 模式为 1 时显示定时面板，否则隐藏
-    }
-
-    // 收集网页所有输入框参数并打包发送给 ESP32 保存的函数
-    async function saveAndSendParams() {
-      let tw = document.getElementById('targetWeight').value;        // 获取输入的重量目标
-      let kf = document.getElementById('kalibFactor').value;         // 获取输入的校准系数
-      let to = document.getElementById('feedTimeout').value;         // 获取输入的超时时间
-      let sp = document.getElementById('speedPreset').value;         // 获取选中的速度预设
-      let wm = document.getElementById('workMode').value;            // 获取选中的工作模式
-
-      let m1_en = document.getElementById('m1_en').checked ? 1 : 0;  // 获取餐次1使能状态（布尔转 1/0）
-      let m1_t = document.getElementById('m1_time').value;          // 获取餐次1时间字符串
-
-      let m2_en = document.getElementById('m2_en').checked ? 1 : 0;  // 获取餐次2使能状态（布尔转 1/0）
-      let m2_t = document.getElementById('m2_time').value;          // 获取餐次2时间字符串
-
-      let m3_en = document.getElementById('m3_en').checked ? 1 : 0;  // 获取餐次3使能状态（布尔转 1/0）
-      let m3_t = document.getElementById('m3_time').value;          // 获取餐次3时间字符串
-
-      // 按照规定格式拼接全套参数，使用逗号分隔
-      let payload = `${tw},${kf},${to},${sp},${wm},${m1_en},${m1_t},${m2_en},${m2_t},${m3_en},${m3_t}`;
-      await sendCmd(payload);                                        // 将打包好的参数字符串通过 BLE 发送给设备
-      alert("Settings Saved!");                                      // 弹出提示框通知保存成功
-    }
-
-    // 向设备发送系统时间戳对时指令的函数
-    async function syncTime() {
-      let epoch = Math.floor(Date.now() / 1000);                     // 获取当前网页系统的 UNIX 时间戳（秒）
-      await sendCmd("SYNC_TIME:" + epoch);                           // 发送对时指令包
-    }
-  </script>
+        // 打包拼接所有参数字符串
+        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${wMode},${m1_en},${m1_t},${m2_en},${m2_t},${m3_en},${m3_t}`;
+        let encoder = new TextEncoder();
+        try {
+            await bleCharacteristic.writeValue(encoder.encode(dataString));
+            alert("Parameters Applied Successfully");
+        } catch (error) {
+            alert("Sending Failed");
+        }
+    } 
+</script>
 </body>
 </html>
