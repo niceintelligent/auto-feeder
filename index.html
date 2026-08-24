@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automatic Weighing Controller</title>
+    <title> Automatic Weighing Controller </title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -37,21 +37,10 @@
             text-align: center;
             box-sizing: border-box;
         }
-        .btn-blue {
-            background-color: #007bff;
-            color: white;
-            margin-bottom: 15px;
-        }
-        .btn-red {
-            background-color: #e53e3e;
-            color: white;
-            margin-bottom: 15px;
-        }
-        .btn-green {
-            background-color: #28a745;
-            color: white;
-            margin-top: 20px;
-        }
+        .btn-blue { background-color: #007bff; color: white; margin-bottom: 15px; }
+        .btn-red { background-color: #e53e3e; color: white; margin-bottom: 15px; }
+        .btn-green { background-color: #28a745; color: white; margin-top: 20px; }
+        .btn-orange { background-color: #fd7e14; color: white; margin-top: 10px; }
         .weight-display {
             background: #fff5f5;
             border: 2px solid #feb2b2;
@@ -63,9 +52,20 @@
             color: #e53e3e;
             margin: 15px 0;
         }
-        .param-group {
-            margin-bottom: 15px;
+        .timer-section {
+            background: #eef6ff;
+            border: 1px solid #b6d4fe;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
         }
+        .meal-box {
+            border-bottom: 1px dashed #b6d4fe;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+        .meal-box:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .param-group { margin-bottom: 15px; }
         .param-group label {
             display: block;
             font-size: 14px;
@@ -73,12 +73,7 @@
             margin-bottom: 5px;
             color: #4a5568;
         }
-        .param-group label.warning {
-            color: #e53e3e; 
-        }
-        .param-group label.highlight {
-            color: #2b6cb0;
-        }
+        .param-group label.warning { color: #e53e3e; }
         .param-group input, .param-group select {
             width: 100%;
             padding: 10px;
@@ -87,18 +82,12 @@
             border-radius: 6px;
             box-sizing: border-box;
         }
+        .row { display: flex; gap: 10px; align-items: center; }
         .status-bar {
             text-align: center;
             font-size: 14px;
             color: #718096;
             margin-bottom: 10px;
-        }
-        .timer-box {
-            background: #ebf8ff;
-            border: 1px solid #bee3f8;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -109,24 +98,54 @@
     <div class="status-bar" id="statusText">Status: Disconnected</div>
     <button class="btn btn-blue" id="connectBtn" onclick="onConnectClick()">Search & Connect Device</button> 
     <div class="weight-display" id="weightVal">Current Real-time Weight: 0.0 g</div>
-    <hr style="border:0; height:1px; background:#e2e8f0; margin:20px 0;">
 
-    <!-- 新增：定时器功能区块 -->
-    <div class="timer-box">
-        <div class="param-group">
-            <label class="highlight">11. Timer Mode (定时投喂开关):</label>
-            <select id="etTimerEnable" onchange="toggleTimerInput()">
-                <option value="0">Disabled (Continuous Mode / 连续循环供料)</option>
-                <option value="1">Enabled (Scheduled Daily / 每日定时供料)</option>
-            </select>
+    <!-- 新增：每日 3 次定时投喂区域 -->
+    <div class="timer-section">
+        <h3 style="margin-top:0; color:#0056b3;">📅 Daily Scheduled Feeding</h3>
+        
+        <div class="meal-box">
+            <div class="param-group">
+                <label>Meal 1 (早餐):</label>
+                <div class="row">
+                    <select id="m1_enable" style="flex: 1;">
+                        <option value="0">Disabled (关闭)</option>
+                        <option value="1">Enabled (开启)</option>
+                    </select>
+                    <input type="time" id="m1_time" value="08:00" style="flex: 1;">
+                </div>
+            </div>
         </div>
-        <div class="param-group" id="timerTimeGroup" style="display:none;">
-            <label class="highlight">12. Daily Feeding Time (每日定时时间):</label>
-            <input type="time" id="etTimerTime" value="08:00">
+
+        <div class="meal-box">
+            <div class="param-group">
+                <label>Meal 2 (午餐):</label>
+                <div class="row">
+                    <select id="m2_enable" style="flex: 1;">
+                        <option value="0">Disabled (关闭)</option>
+                        <option value="1">Enabled (开启)</option>
+                    </select>
+                    <input type="time" id="m2_time" value="12:30" style="flex: 1;">
+                </div>
+            </div>
+        </div>
+
+        <div class="meal-box">
+            <div class="param-group">
+                <label>Meal 3 (晚餐):</label>
+                <div class="row">
+                    <select id="m3_enable" style="flex: 1;">
+                        <option value="0">Disabled (关闭)</option>
+                        <option value="1">Enabled (开启)</option>
+                    </select>
+                    <input type="time" id="m3_time" value="18:30" style="flex: 1;">
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- 基础参数配置 -->
+    <hr style="border:0; height:1px; background:#e2e8f0; margin:20px 0;">
+
+    <!-- 保留原有 10 项参数 -->
     <div class="param-group">
         <label>1. Target Weight (g):</label>
         <input type="number" id="etWeight" step="0.1" value="100.0">
@@ -169,6 +188,7 @@
     </div>
 
     <button class="btn btn-green" onclick="sendParameters()">Apply Settings</button>
+    <button class="btn btn-orange" onclick="triggerManualFeed()">Manual Feed Now (手动立即触发一次)</button>
 </div>
 
 <script>
@@ -179,14 +199,9 @@
     let bleCharacteristic = null;
     let lastRecData = "";
 
-    function toggleTimerInput() {
-        let en = document.getElementById('etTimerEnable').value;
-        document.getElementById('timerTimeGroup').style.display = (en === "1") ? "block" : "none";
-    }
-
     function fillDeviceParams(paramStr){
         let arr = paramStr.split(',');
-        if(arr.length === 13){
+        if(arr.length >= 10){
             document.getElementById('etWeight').value = arr[0];
             document.getElementById('etWeighWait').value = arr[1];
             document.getElementById('etServoAngle').value = arr[2];
@@ -198,26 +213,25 @@
             document.getElementById('etReduceStable').value = arr[8];
             document.getElementById('etScaleFactor').value = arr[9]; 
             
-            // 填充定时器数据
-            document.getElementById('etTimerEnable').value = arr[10];
-            let hh = arr[11].padStart(2, '0');
-            let mm = arr[12].padStart(2, '0');
-            document.getElementById('etTimerTime').value = `${hh}:${mm}`;
-            
-            toggleTimerInput();
+            // 回填定时参数
+            if(arr.length >= 16) {
+                document.getElementById('m1_enable').value = arr[10];
+                document.getElementById('m1_time').value = arr[11];
+                document.getElementById('m2_enable').value = arr[12];
+                document.getElementById('m2_time').value = arr[13];
+                document.getElementById('m3_enable').value = arr[14];
+                document.getElementById('m3_time').value = arr[15];
+            }
+
             document.getElementById('statusText').innerText = "Status: Parameters Synced";
         }
     }
 
     async function syncSystemTime() {
         if (!bleCharacteristic) return;
-        let now = new Date();
-        let h = now.getHours();
-        let m = now.getMinutes();
-        let s = now.getSeconds();
-        let timeCmd = `TIME:${h},${m},${s}`;
+        let epoch = Math.floor(Date.now() / 1000);
         let encoder = new TextEncoder();
-        await bleCharacteristic.writeValue(encoder.encode(timeCmd));
+        await bleCharacteristic.writeValue(encoder.encode(`SYNC_TIME:${epoch}`));
     }
 
     async function onConnectClick() {
@@ -234,11 +248,11 @@
                 bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
                 await bleCharacteristic.startNotifications();
                 bleCharacteristic.addEventListener('characteristicvaluechanged', handleRecData);
-                document.getElementById('statusText').innerText = "Connected, Syncing Time...";
+                document.getElementById('statusText').innerText = "Connected, Syncing Time & Reading...";
                 document.getElementById('connectBtn').innerText = "Disconnect";
                 document.getElementById('connectBtn').className = "btn btn-red";
                 
-                // 1. 自动校准ESP32内部时间为手机当前时间
+                // 1. 先对时
                 await syncSystemTime();
 
                 // 2. 发送读取参数指令
@@ -263,7 +277,7 @@
         lastRecData = str;
 
         let commaCnt = (str.match(/,/g) || []).length;
-        if(commaCnt === 12){  // 13项数据对应12个逗号
+        if(commaCnt >= 9){
             fillDeviceParams(str);
         }else{
             document.getElementById('weightVal').innerText = "Current Real-time Weight: " + str + " g";
@@ -294,25 +308,35 @@
         let stableT = parseInt(document.getElementById('etReduceStable').value);
         let scaleFac = parseFloat(document.getElementById('etScaleFactor').value).toFixed(2);
 
-        // 获取定时器参数
-        let timerEn = parseInt(document.getElementById('etTimerEnable').value);
-        let timerTime = document.getElementById('etTimerTime').value.split(':');
-        let timerH = parseInt(timerTime[0]);
-        let timerM = parseInt(timerTime[1]);
+        let m1_e = document.getElementById('m1_enable').value;
+        let m1_t = document.getElementById('m1_time').value;
+        let m2_e = document.getElementById('m2_enable').value;
+        let m2_t = document.getElementById('m2_time').value;
+        let m3_e = document.getElementById('m3_enable').value;
+        let m3_t = document.getElementById('m3_time').value;
 
-        // 拼接13项参数
-        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${timerEn},${timerH},${timerM}`;
-        
+        let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${m1_e},${m1_t},${m2_e},${m2_t},${m3_e},${m3_t}`;
         let encoder = new TextEncoder();
         try {
-            // 下发参数前先自动校准一次当前系统时间
-            await syncSystemTime();
             await bleCharacteristic.writeValue(encoder.encode(dataString));
             alert("Parameters Applied Successfully");
         } catch (error) {
             alert("Sending Failed");
         }
     } 
+
+    async function triggerManualFeed() {
+        if (!bleCharacteristic) {
+            alert("Please Connect to Bluetooth First");
+            return;
+        }
+        let encoder = new TextEncoder();
+        try {
+            await bleCharacteristic.writeValue(encoder.encode("MANUAL_TRIGGER"));
+        } catch (error) {
+            alert("Trigger Failed");
+        }
+    }
 </script>
 </body>
 </html>
