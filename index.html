@@ -227,6 +227,20 @@
         document.getElementById('timerGroup').style.display = (mode === "1") ? "block" : "none";
     }
 
+    // 专门用于发送时间校准的独立函数（加上 +8 小时偏移）
+    async function syncSystemTime() {
+        if (!bleCharacteristic) return;
+        let encoder = new TextEncoder();
+        
+        // 计算本地时间对应的 Unix 时间戳
+        let now = new Date();
+        // 获取本地时间戳 (秒) 并补齐 UTC+8 区时（+28800 秒）
+        let localEpoch = Math.floor(now.getTime() / 1000) - (now.getTimezoneOffset() * 60);
+        
+        await bleCharacteristic.writeValue(encoder.encode("SYNC_TIME:" + localEpoch));
+        console.log("Synced Time to ESP32 (Local Adjusted):", localEpoch);
+    }
+
     function fillDeviceParams(paramStr){
         let arr = paramStr.split(',');
         if(arr.length >= 17){
@@ -252,7 +266,7 @@
             document.getElementById('m3_time').value = arr[16] || "18:00";
 
             onModeChange();
-            document.getElementById('statusText').innerText = "Status: Parameters Synced";
+            document.getElementById('statusText').innerText = "Status: Parameters & Time Synced";
         }
     }
 
@@ -271,18 +285,17 @@
                 await bleCharacteristic.startNotifications();
                 bleCharacteristic.addEventListener('characteristicvaluechanged', handleRecData);
                 
-                document.getElementById('statusText').innerText = "Connected, Syncing Time & Reading Parameters...";
+                document.getElementById('statusText').innerText = "Connected, Syncing Time & Reading Params...";
                 document.getElementById('connectBtn').innerText = "Disconnect";
                 document.getElementById('connectBtn').className = "btn btn-red";
                 
                 let encoder = new TextEncoder();
                 
-                // 1. 发送时间同步指令
-                let epoch = Math.floor(Date.now() / 1000);
-                await bleCharacteristic.writeValue(encoder.encode("SYNC_TIME:" + epoch));
+                // 1. 发送带本地时区（UTC+8）纠正的时间同步指令
+                await syncSystemTime();
                 
-                // 增加 150ms 延时，保证蓝牙传输层间隔，防止指令黏包
-                await delay(150);
+                // 延时 200ms，确保 ESP32 完成 RTC 芯片设置，防止与后一条指令黏包
+                await delay(200);
 
                 // 2. 发送读取参数指令
                 await bleCharacteristic.writeValue(encoder.encode("READ_PARAMS"));
@@ -326,7 +339,13 @@
             return;
         }
 
-        // 防空校验，防止空输入框导出 NaN 导致设备解析崩溃
+        let encoder = new TextEncoder();
+
+        // 点击 Apply 时，强制先校准一次本地最新时间
+        await syncSystemTime();
+        await delay(200);
+
+        // 防空校验与格式整理
         let w = parseFloat(document.getElementById('etWeight').value || 100).toFixed(1);
         let ww = parseInt(document.getElementById('etWeighWait').value || 2);
         let sa = parseInt(document.getElementById('etServoAngle').value || 180);
@@ -349,10 +368,10 @@
         let m3_t  = document.getElementById('m3_time').value || "18:00";
 
         let dataString = `${w},${ww},${sa},${sh},${ci},${werr},${stms},${slow},${stableT},${scaleFac},${wMode},${m1_en},${m1_t},${m2_en},${m2_t},${m3_en},${m3_t}`;
-        let encoder = new TextEncoder();
+        
         try {
             await bleCharacteristic.writeValue(encoder.encode(dataString));
-            alert("Parameters Applied Successfully");
+            alert("Parameters & Time Applied Successfully!");
         } catch (error) {
             alert("Sending Failed: " + error.message);
         }
